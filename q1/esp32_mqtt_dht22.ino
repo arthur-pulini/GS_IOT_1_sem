@@ -5,16 +5,14 @@
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
 
-#define boardLED 2      // LED onboard
-#define DHTPIN 12       // Pino de dados do DHT
-#define DHTTYPE DHT22   // DHT22 (AM2302)
-#define POTPIN 34       // Pino do potenciômetro (GPIO34/ADC6)
+#define boardLED 2      
+#define DHTPIN 12       
+#define DHTTYPE DHT22   
+#define POTPIN 34       
 
-// Identificadores
 const char* ID        = "quamtunLeap";
 const char* moduleID  = "Meu_ESP32";
 
-// Wi-Fi
 const char* SSID      = "Wokwi-GUEST";
 const char* PASSWORD  = "";
 
@@ -23,18 +21,17 @@ const int   BROKER_PORT  = 1883;
 const char* mqttUser     = "gs2025";
 const char* mqttPassword = "q1w2e3r4";
 
-// Tópico MQTT
 #define TOPICO_PUBLISH  "2TDS/esp32/teste"
 
 WiFiClient espClient;
 PubSubClient MQTT(espClient);
-JsonDocument doc;  // Documento JSON dinâmico
-char buffer[256];  // Buffer para o JSON serializado
+JsonDocument doc;  
+char buffer[256];  
 DHT dht(DHTPIN, DHTTYPE);
 
 float temperatura;
 float umidade;
-int valorPot;      // Valor do potenciômetro
+int valorPot;      
 
 void initWiFi() {
     WiFi.begin(SSID, PASSWORD);
@@ -101,43 +98,32 @@ void setup() {
 }
 
 void loop() {
-    // Verifica e mantém conexões ativas com Wi-Fi e MQTT
     verificaConexoesWiFiEMQTT();
 
-    // Leitura dos dados do sensor DHT
     umidade = dht.readHumidity();
 
-    // Leitura do potenciômetro
     valorPot = analogRead(POTPIN);
 
-    // Limpa o documento JSON para nova utilização
     doc.clear();
 
-    // 1. Identificação
     doc["ID"] = ID;
     doc["Sensor"] = moduleID;
 
-    // 2. Rede
     doc["IP"] = WiFi.localIP().toString();
     doc["MAC"] = WiFi.macAddress();
 
-    // 3. Dados de sensores
     if (!isnan(umidade)) {
         doc["Umidade"] = umidade;
     } else {
         doc["Umidade"] = "Erro na leitura";
     }
 
-    // 4. Dados do potenciômetro
     doc["Potenciometro"] = valorPot;
 
-    // Serializa JSON para string
     serializeJson(doc, buffer);
 
-    // Exibe no monitor serial
     Serial.println(buffer);
 
-    // Envia via MQTT
     enviaEstadoOutputMQTT();
 
     piscaLed();
